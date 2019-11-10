@@ -2,7 +2,7 @@ chunkSize = 16                              #chunk size = 8 bytes = 16 chars in 
 import binascii                             #one byte can fit 2 hex characters in it
 from binascii import hexlify
 
-midifile = open('despacito.midi', 'rb')
+midifile = open('despacitoT.midi', 'rb')
 
 content = midifile.read()
 contenthex = hexlify(content)
