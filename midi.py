@@ -45,16 +45,17 @@ def unpackMTrack(content):
     content = content[16:]
     prevOp = ""
     while len(content) > 0:
-        #strip off time offset
-        x = 2
+        deltaTimeEnd = 2
 
         while True:
-            deltaTime = content[0:x]
+            deltaTime = content[0:deltaTimeEnd]
             if int(deltaTime[-2:], 16) < 128:
                 break
-            x += 2
+            deltaTimeEnd += 2
 
-        content = content[x:]
+        deltaTime = deltaTimeToInt(deltaTime)
+
+        content = content[deltaTimeEnd:]
 
         if content[:2] not in [b'ff', b'f0', b'f7'] and content[:1] not in [b'8', b'9', b'a', b'b', b'c', b'd', b'e']:
             content = prevOp + content
@@ -65,7 +66,7 @@ def unpackMTrack(content):
             content = content[6 + length * 2:]
 
         elif content[:1] in [b'8', b'9', b'a', b'b']:
-            print(str(deltaTime, "utf-8") + " " + str(content[:6], "utf-8"))
+            print(str(deltaTime) + " " + str(content[:6], "utf-8"))
             prevOp = content[:2]
             content = content[6:]
 
@@ -75,6 +76,15 @@ def unpackMTrack(content):
             content = content[4:]
 
 
+def deltaTimeToInt(dTime):
+    binTime = format(int(dTime, 16), '0>' + str(len(dTime) * 4)+'b')
+    parsedBinTime = ""
+    while len(binTime) > 0:
+        binTime = binTime[1:]
+        parsedBinTime += binTime[:7]
+        binTime = binTime[7:]
+    return (int(parsedBinTime, 2))
+
 if __name__ == "__main__":
     #printHex(getHeader(contenthex))
     #printHex(getFormat(contenthex))
@@ -83,4 +93,6 @@ if __name__ == "__main__":
     #printHex(getMTrack(contenthex))
     #printHex(getMTrack(contenthex))
     unpackMTrack(getMTrack(contenthex))
+    
+
     pass
