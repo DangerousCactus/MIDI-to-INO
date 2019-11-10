@@ -6,7 +6,7 @@ midifile = open('despacitoT.midi', 'rb')
 
 content = midifile.read()
 contenthex = hexlify(content)
-
+#print(contenthex)
 def getHeader(content):
     index = content.find(hexlify(b'MThd'))
     length = int(content[index + 8:index + 16], 16)
@@ -75,8 +75,7 @@ if __name__ == "__main__":
     #print(getTickdiv(contenthex))
     #printHex(getMTrack(contenthex))
     #printHex(getMTrack(contenthex))
-    unpackMTrack(getMTrack(contenthex, start= 200))
-
+    unpackMTrack(getMTrack(contenthex))
     pass
 
 
