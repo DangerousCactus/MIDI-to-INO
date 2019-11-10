@@ -18,13 +18,45 @@ def getFormat(content):
 def getNTracks(content):
     return getHeader(content)[20:24]
 
-def getTickdiv(content):
+def getTickdiv(content):                    #number of sub-divisions of a quarter note
     return getHeader(contenthex)[24:28]
 
+def getMTrack(content):
+    index = content.find(hexlify(b'MTrk'))
+    length = int(content[index + 8:index + 16], 16)
+    return content[index: index + chunkSize + length*2]
+
+def printHex(content):
+    out = ""
+    while len(content) > 0:
+        out += str(content[:8]) + " "
+        content = content[8:]
+    print(out)
+
+def unpackMTrack(content):
+    content = content[16:]
+    while len(content) > 0:
+        #strip off time offset
+        x = content[2:3]
+        if content[2:4] in [b'ff', b'f0',b'f7']:
+            length = int(content[6:8], 16)
+            print(content[:8 + length * 2])
+            content = content[8 + length * 2:]
+        
+        elif content[2:3] in [b'8', b'9', b'a', b'b']:
+            print(content[:8])
+            content = content[8:]
+        
+        elif content[2:3] in [b'c', b'd', b'e']:
+            print(content[:6])
+            content = content[6:]
+
 if __name__ == "__main__":
-    # print(getHeader(contenthex)) 
-    # print(getFormat(contenthex))
-    # print(getNTracks(contenthex))
-    # print(getTickdiv(contenthex))
-    #getChunk(contenthex, 5)
+    #printHex(getHeader(contenthex)) 
+    #printHex(getFormat(contenthex))
+    #print(getNTracks(contenthex))
+    #print(getTickdiv(contenthex))
+    #printHex(getMTrack(contenthex))
+    unpackMTrack(getMTrack(contenthex))
+
     pass
