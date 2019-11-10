@@ -21,8 +21,8 @@ def getNTracks(content):
 def getTickdiv(content):                    #number of sub-divisions of a quarter note
     return getHeader(contenthex)[24:28]
 
-def getMTrack(content):
-    index = content.find(hexlify(b'MTrk'))
+def getMTrack(content, start = 0):
+    index = content[:].find(hexlify(b'MTrk'), start)
     length = int(content[index + 8:index + 16], 16)
     return content[index: index + chunkSize + length*2]
 
@@ -35,21 +35,38 @@ def printHex(content):
 
 def unpackMTrack(content):
     content = content[16:]
+    prevOp = ""
     while len(content) > 0:
         #strip off time offset
-        x = content[2:3]
-        if content[2:4] in [b'ff', b'f0',b'f7']:
-            length = int(content[6:8], 16)
-            print(content[:8 + length * 2])
-            content = content[8 + length * 2:]
+        x = 2
         
-        elif content[2:3] in [b'8', b'9', b'a', b'b']:
-            print(content[:8])
-            content = content[8:]
+        while True:
+            deltaTime = content[0:x]
+            if int(deltaTime[-2:], 16) < 128:
+                break
+            x += 2
+
+        content = content[x:]
+
+        if content[:2] not in [b'ff', b'f0',b'f7'] and content[:1] not in [b'8', b'9', b'a', b'b', b'c', b'd', b'e']:
+            content = prevOp + content
+
+
+        if content[:2] in [b'ff', b'f0',b'f7']:
+            length = int(content[4:6], 16)
+            print(str(deltaTime) + str(content[:6 + length * 2]))
+            content = content[6 + length * 2:]
         
-        elif content[2:3] in [b'c', b'd', b'e']:
-            print(content[:6])
+        elif content[:1] in [b'8', b'9', b'a', b'b']:
+            print(str(deltaTime) + str(content[:6]))
+            prevOp = content[:2]
             content = content[6:]
+        
+        elif content[:1] in [b'c', b'd', b'e']:
+            print(str(deltaTime) + str(content[:4]))
+            prevOp = content[:2]
+            content = content[4:]
+        
 
 if __name__ == "__main__":
     #printHex(getHeader(contenthex)) 
@@ -57,6 +74,9 @@ if __name__ == "__main__":
     #print(getNTracks(contenthex))
     #print(getTickdiv(contenthex))
     #printHex(getMTrack(contenthex))
-    unpackMTrack(getMTrack(contenthex))
+    #printHex(getMTrack(contenthex))
+    unpackMTrack(getMTrack(contenthex, start= 200))
 
     pass
+
+
