@@ -2,7 +2,7 @@ import binascii  # one byte can fit 2 hex characters in it
 from binascii import hexlify
 
 chunkSize = 16  # chunk size = 8 bytes = 16 chars in hex
-BPM = 89
+BPM = 120
 lengthOfQuarterNote = 60000/BPM  # in MS
 tickDiv = None
 
@@ -183,7 +183,7 @@ def generateInoFile(timings, commands, filename):
     out = out [:-1]
     f.write('int delays[] = {'+  out +'};')
 
-    f.write("void song() {\nfor(int i = 0; i < sizeof(delays); i++){\ntone(tonePin, tones[i], delays[i]);\ndelay(delays[i] + 25);}}\nvoid setup() {}\nvoid loop() {song();}")
+    f.write("void song() {\nfor(int i = 0; i < sizeof(delays)/sizeof(delays[0]); i++){\ntone(tonePin, tones[i], delays[i]);\ndelay(delays[i] + 25);}}\nvoid setup() {}\nvoid loop() {song(); noTone(tonePin);}")
     f.close()
 
 if __name__ == "__main__":
@@ -213,4 +213,4 @@ if __name__ == "__main__":
     #print(timings, commands) 
     #print(len(timings), len(commands))
 
-    generateInoFile(timings[:100], commands[:100], 'allstar.ino')
+    generateInoFile(timings[:300], commands[:300], 'allstar.ino')
