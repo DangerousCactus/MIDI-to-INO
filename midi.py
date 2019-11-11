@@ -3,7 +3,7 @@ from binascii import hexlify
 
 chunkSize = 16  # chunk size = 8 bytes = 16 chars in hex
 BPM = 89
-lengthOfQuarterNote = 60000/BPM #in MS
+lengthOfQuarterNote = 60000/BPM  # in MS
 tickDiv = None
 
 midifile = open('despacitoT.midi', 'rb')
@@ -11,6 +11,21 @@ midifile = open('despacitoT.midi', 'rb')
 content = midifile.read()
 contenthex = hexlify(content)
 #print(contenthex)
+
+notes = {
+    '24': 'C1', '30': 'C2', '3C': 'C3', '48': 'C4', '54': 'C5', '60': 'C6', '6C': 'C7',	'78': 'C8', 
+    '25': 'CS1', '31': 'CS2', '3D': 'CS3', '49': 'CS4', '55': 'CS5', '61': 'CS6', '6D': 'CS7', '79': 'CS8', 
+    '26': 'D1', '32': 'D2', '3E': 'D3', '4A': 'D4', '56': 'D5', '62': 'D6', '6E': 'D7', '7A': 'D8', 
+    '27': 'DS1', '33': 'DS2', '3F': 'DS3', '4B': 'DS4', '57': 'DS5', '63': 'DS6', '6F': 'DS7', '7B': 'DS8', 
+    '28': 'E1', '34': 'E2', '40': 'E3', '4C': 'E4', '58': 'E5', '64': 'E6', '70': 'E7',	'7C': 'E8',
+     '29': 'F1', '35': 'F2', '41': 'F3', '4D': 'F4', '59': 'F5', '65': 'F6', '71': 'F7','7D': 'F8', 
+     '2A': 'FS1', '36': 'FS2', '42': 'FS3', '4E': 'FS4', '5A': 'FS5', '66': 'FS6', '72': 'FS7',	'7E': 'FS8', 
+     '2B': 'G1', '37': 'G2', '43': 'G3', '4F': 'G4', '5B': 'G5', '67': 'G6', '73': 'G7','7F': 'G8', 
+     '2C': 'GS1', '38': 'GS2', '44': 'GS3', '50': 'GS4', '5C': 'GS5', '68': 'GS6', '74': 'GS7', 
+     '2D': 'A1', '39': 'A2', '45': 'A3', '51': 'A4', '5D': 'A5', '69': 'A6', '75': 'A7', 
+     '2E': 'AS1', '3A': 'AS2', '46': 'AS3', '52': 'AS4', '5E': 'AS5', '6A': 'AS6', '76': 'AS7', 
+     '23': 'B0', '2F': 'B1', '3B': 'B2', '47': 'B3', '53': 'B4', '5F': 'B5', '6B': 'B6', '77': 'B7'
+     }
 
 
 def getHeader(content):
@@ -84,6 +99,7 @@ def unpackMTrack(content):
 
     return timings, commands
 
+
 def removeMetaEvents(timings, commands):
     indicesToRemove = []
     for i in range(len(commands)):
@@ -96,14 +112,17 @@ def removeMetaEvents(timings, commands):
 
     return timings, commands
 
+
 def generateArduinoTimings(timings):
     outTimings = []
     for timing in timings:
-        outTimings.append(timing * lengthOfQuarterNote/tickDiv )
+        outTimings.append(timing * lengthOfQuarterNote/tickDiv)
     return outTimings
+
 
 def generateArduinoCommands(commands):
     return commands
+
 
 def deltaTimeToInt(dTime):
     binTime = format(int(dTime, 16), '0>' + str(len(dTime) * 4)+'b')
