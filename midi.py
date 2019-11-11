@@ -201,12 +201,16 @@ def makeSong(name, bpm):
     timings, commands = removeMetaEvents(timings, commands)
     timings = generateArduinoTimings(timings, lengthOfQuarterNote, tickDiv)
     timings, commands = removeRepeatedCommands(timings, commands)
-    timings, commands = removeToneOff(timings, commands)
+    #print(commands, timings, len(timings))
+    timings, commands = removeToneOff(timings, commands) #fix, need 3 vars, delay, length, and tone
     commands = generateArduinoCommands(commands)
-    generateInoFile(timings, commands, name + '.ino')
+    #print(timings, len(timings))
+    #generateInoFile(timings, commands, name + '.ino')
 
 
 songs = [['allstar', 150], ['despacito', 120], ['numberone', 120], ['mario', 240]]
 
-for song in songs:
-    makeSong(song[0], song[1])
+# for song in songs:
+#     makeSong(song[0], song[1])
+
+makeSong(songs[1][0], songs[1][1])
