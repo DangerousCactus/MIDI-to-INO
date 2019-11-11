@@ -206,7 +206,7 @@ def makeSong(name, bpm):
     generateInoFile(timings, commands, name + '.ino')
 
 
-songs = [['allstar', 200], ['despacito', 120], ['numberone', 120]]
+songs = [['allstar', 200], ['despacito', 120], ['numberone', 120], ['mario', 240]]
 
 for song in songs:
     makeSong(song[0], song[1])
