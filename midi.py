@@ -2,16 +2,6 @@ import binascii  # one byte can fit 2 hex characters in it
 from binascii import hexlify
 
 chunkSize = 16  # chunk size = 8 bytes = 16 chars in hex
-BPM = 200
-lengthOfQuarterNote = 60000/BPM  # in MS
-tickDiv = None
-
-midifile = open('allstar.midi', 'rb')
-content = midifile.read()
-midifile.close()
-
-contenthex = hexlify(content)
-#print(contenthex)
 
 notes = {
     '24': 'C1', '30': 'C2', '3C': 'C3', '48': 'C4', '54': 'C5', '60': 'C6', '6C': 'C7',	'78': 'C8',
@@ -114,10 +104,11 @@ def removeMetaEvents(timings, commands):
     return timings, commands
 
 
-def generateArduinoTimings(timings):
+def generateArduinoTimings(timings, lengthOfQuarterNote, tickDiv):
     outTimings = []
     for timing in timings:
-        outTimings.append(round(timing * lengthOfQuarterNote/tickDiv)) #round?
+        outTimings.append(
+            round(timing * lengthOfQuarterNote/tickDiv))  # round?
     return outTimings
 
 
@@ -127,6 +118,7 @@ def generateArduinoCommands(commands):
         tones.append(notes.get(command.upper()))
     return tones
 
+
 def removeToneOff(timings, commands):
     indicesToRemove = []
     for i in range(len(commands)):
@@ -135,7 +127,7 @@ def removeToneOff(timings, commands):
 
     for i in range(len(indicesToRemove)-1, -1, -1):
         timings[indicesToRemove[i]-1] += timings.pop(indicesToRemove[i])
-        commands.pop(indicesToRemove[i])    
+        commands.pop(indicesToRemove[i])
 
     for i in range(len(commands)):
         commands[i] = commands[i][2:4]
@@ -180,39 +172,41 @@ def generateInoFile(timings, commands, filename):
     out = ""
     for command in commands:
         out += command + ','
-    out = out [:-1]
-    f.write('int tones[] = {'+ out  +'};' + "\n")
+    out = out[:-1]
+    f.write('int tones[] = {' + out + '};' + "\n")
 
     out = ""
     for timing in timings:
         out += str(timing) + ','
-    out = out [:-1]
-    f.write('int delays[] = {'+  out +'};' + "\n")
+    out = out[:-1]
+    f.write('int delays[] = {' + out + '};' + "\n")
 
-    f.write("void song() {\nfor(int i = 0; i < sizeof(delays)/sizeof(delays[0]); i++){\ntone(tonePin, tones[i], delays[i]);\ndelay(delays[i] + 25);}}\nvoid setup() {}\nvoid loop() {song();}")
+    f.write(
+        "void song() {\nfor(int i = 0; i < sizeof(delays)/sizeof(delays[0]); i++){\ntone(tonePin, tones[i], delays[i]);\ndelay(delays[i] + 25);}}\nvoid setup() {}\nvoid loop() {song();}")
     f.close()
 
-if __name__ == "__main__":
-    #printHex(getHeader(contenthex))
-    #print(getFormat(contenthex))
-    #print(getNTracks(contenthex))
+
+def makeSong(name, bpm):
+    BPM = bpm
+    lengthOfQuarterNote = 60000/BPM  # in MS
+
+    midifile = open(name + '.midi', 'rb')
+    content = midifile.read()
+    midifile.close()
+    contenthex = hexlify(content)
+
     tickDiv = getTickdiv(contenthex)
-    #printHex(getMTrack(contenthex))
-    #printHex(getMTrack(contenthex))
+
     timings, commands = unpackMTrack(getMTrack(contenthex))
     timings, commands = removeMetaEvents(timings, commands)
-
-    timings = generateArduinoTimings(timings)
-    
-    #timings = timings[::2]    #Strip off the note off commands
-    #commands = commands[::2]
-
+    timings = generateArduinoTimings(timings, lengthOfQuarterNote, tickDiv)
     timings, commands = removeRepeatedCommands(timings, commands)
-
-    timings, commands = removeToneOff(timings, commands) 
+    timings, commands = removeToneOff(timings, commands)
     commands = generateArduinoCommands(commands)
-    
-    #print(timings, commands) 
-    #print(len(timings), len(commands))
-
     generateInoFile(timings, commands, 'allstar.ino')
+
+
+songs = [['allstar', 200], ['despacito', 120], ['numberone', 120]]
+
+for song in songs:
+    makeSong(song[0], song[1])
