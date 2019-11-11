@@ -2,11 +2,11 @@ import binascii  # one byte can fit 2 hex characters in it
 from binascii import hexlify
 
 chunkSize = 16  # chunk size = 8 bytes = 16 chars in hex
-BPM = 120
+BPM = 200
 lengthOfQuarterNote = 60000/BPM  # in MS
 tickDiv = None
 
-midifile = open('All_Star.midi', 'rb')
+midifile = open('numberone.midi', 'rb')
 content = midifile.read()
 midifile.close()
 
@@ -203,14 +203,10 @@ if __name__ == "__main__":
 
     timings, commands = removeRepeatedCommands(timings, commands)
 
-    print(sum(timings))
-    timings, commands = removeToneOff(timings, commands) #problem in here
-    print(sum(timings))
-
-
+    timings, commands = removeToneOff(timings, commands) 
     commands = generateArduinoCommands(commands)
     
     #print(timings, commands) 
     #print(len(timings), len(commands))
 
-    generateInoFile(timings[:300], commands[:300], 'allstar.ino')
+    generateInoFile(timings, commands, 'numberone.ino')
