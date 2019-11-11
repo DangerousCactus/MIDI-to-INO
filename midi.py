@@ -6,7 +6,7 @@ BPM = 200
 lengthOfQuarterNote = 60000/BPM  # in MS
 tickDiv = None
 
-midifile = open('numberone.midi', 'rb')
+midifile = open('allstar.midi', 'rb')
 content = midifile.read()
 midifile.close()
 
@@ -169,21 +169,27 @@ def deltaTimeToInt(dTime):
 
 def generateInoFile(timings, commands, filename):
     f = open(filename, 'w')
-    f.write('int tonePin = 11;')
+    pitches = open('pitches.h', 'r')
+
+    for line in pitches.readlines():
+        f.write(line)
+    f.write("\n")
+
+    f.write('int tonePin = 11;' + "\n")
 
     out = ""
     for command in commands:
         out += command + ','
     out = out [:-1]
-    f.write('int tones[] = {'+ out  +'};')
+    f.write('int tones[] = {'+ out  +'};' + "\n")
 
     out = ""
     for timing in timings:
         out += str(timing) + ','
     out = out [:-1]
-    f.write('int delays[] = {'+  out +'};')
+    f.write('int delays[] = {'+  out +'};' + "\n")
 
-    f.write("void song() {\nfor(int i = 0; i < sizeof(delays)/sizeof(delays[0]); i++){\ntone(tonePin, tones[i], delays[i]);\ndelay(delays[i] + 25);}}\nvoid setup() {}\nvoid loop() {song(); noTone(tonePin);}")
+    f.write("void song() {\nfor(int i = 0; i < sizeof(delays)/sizeof(delays[0]); i++){\ntone(tonePin, tones[i], delays[i]);\ndelay(delays[i] + 25);}}\nvoid setup() {}\nvoid loop() {song();}")
     f.close()
 
 if __name__ == "__main__":
@@ -209,4 +215,4 @@ if __name__ == "__main__":
     #print(timings, commands) 
     #print(len(timings), len(commands))
 
-    generateInoFile(timings, commands, 'numberone.ino')
+    generateInoFile(timings, commands, 'allstar.ino')
