@@ -16,15 +16,15 @@ def getHeader(content):
 
 
 def getFormat(content):
-    return getHeader(content)[16:20]
+    return int(getHeader(content)[16:20], 16)
 
 
 def getNTracks(content):
-    return getHeader(content)[20:24]
+    return int(getHeader(content)[20:24], 16)
 
 
-def getTickdiv(content):  # number of sub-divisions of a quarter note
-    return getHeader(contenthex)[24:28]
+def getTickdiv(content):  # number of sub-divisions of a quarter note, this song has 480
+    return int(getHeader(contenthex)[24:28], 16)
 
 
 def getMTrack(content, start=0):
@@ -44,6 +44,7 @@ def printHex(content):
 def unpackMTrack(content):
     content = content[16:]
     prevOp = ""
+    out = ""
     while len(content) > 0:
         deltaTimeEnd = 2
 
@@ -62,19 +63,20 @@ def unpackMTrack(content):
 
         if content[:2] in [b'ff', b'f0', b'f7']:
             length = int(content[4:6], 16)
-            print(str(deltaTime) + str(content[:6 + length * 2]))
+            out += str(deltaTime) + " "+str(content[:6 + length * 2])
             content = content[6 + length * 2:]
 
         elif content[:1] in [b'8', b'9', b'a', b'b']:
-            print(str(deltaTime) + " " + str(content[:6], "utf-8"))
+            out += str(deltaTime) + " " + str(content[:6])
             prevOp = content[:2]
             content = content[6:]
 
         elif content[:1] in [b'c', b'd', b'e']:
-            print(str(deltaTime) + str(content[:4]))
+            out += str(deltaTime) + " " + str(content[:4])
             prevOp = content[:2]
             content = content[4:]
-
+        out += "\n"
+    return out.strip()
 
 def deltaTimeToInt(dTime):
     binTime = format(int(dTime, 16), '0>' + str(len(dTime) * 4)+'b')
@@ -85,14 +87,14 @@ def deltaTimeToInt(dTime):
         binTime = binTime[7:]
     return (int(parsedBinTime, 2))
 
+
 if __name__ == "__main__":
     #printHex(getHeader(contenthex))
-    #printHex(getFormat(contenthex))
+    #print(getFormat(contenthex))
     #print(getNTracks(contenthex))
     #print(getTickdiv(contenthex))
     #printHex(getMTrack(contenthex))
     #printHex(getMTrack(contenthex))
-    unpackMTrack(getMTrack(contenthex))
-    
+    print(unpackMTrack(getMTrack(contenthex)))
 
     pass
