@@ -34,7 +34,7 @@ def getNTracks(content):
 
 
 def getTickdiv(content):  # number of sub-divisions of a quarter note, this song has 480
-    return int(getHeader(contenthex)[24:28], 16)
+    return int(getHeader(content)[24:28], 16)
 
 
 def getMTrack(content, start=0):
@@ -203,7 +203,7 @@ def makeSong(name, bpm):
     timings, commands = removeRepeatedCommands(timings, commands)
     timings, commands = removeToneOff(timings, commands)
     commands = generateArduinoCommands(commands)
-    generateInoFile(timings, commands, 'allstar.ino')
+    generateInoFile(timings, commands, name + '.ino')
 
 
 songs = [['allstar', 200], ['despacito', 120], ['numberone', 120]]
