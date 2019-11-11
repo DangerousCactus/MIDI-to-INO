@@ -124,7 +124,7 @@ def generateArduinoTimings(timings):
 def generateArduinoCommands(commands):
     tones = []
     for command in commands:
-        tones.append("NOTE_"+notes.get(command.upper()))
+        tones.append(notes.get(command.upper()))
     return tones
 
 def removeToneOff(timings, commands):
