@@ -182,7 +182,7 @@ def generateInoFile(timings, commands, filename):
     f.write('int delays[] = {' + out + '};' + "\n")
 
     f.write(
-        "void song() {\nfor(int i = 0; i < sizeof(delays)/sizeof(delays[0]); i++){\ntone(tonePin, tones[i], delays[i]);\ndelay(delays[i] + 25);}}\nvoid setup() {}\nvoid loop() {song();}")
+        "double mod = 1;\nvoid song() {\nfor(int i = 0; i < sizeof(delays)/sizeof(delays[0]); i++){\ntone(tonePin, tones[i], delays[i]);\ndelay(delays[i]*mod + 25);}}\nvoid setup() {}\nvoid loop() {song();}")
     f.close()
 
 
