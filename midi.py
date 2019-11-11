@@ -6,7 +6,7 @@ BPM = 89
 lengthOfQuarterNote = 60000/BPM  # in MS
 tickDiv = None
 
-midifile = open('despacitoT.midi', 'rb')
+midifile = open('All_Star.midi', 'rb')
 content = midifile.read()
 midifile.close()
 
@@ -117,7 +117,7 @@ def removeMetaEvents(timings, commands):
 def generateArduinoTimings(timings):
     outTimings = []
     for timing in timings:
-        outTimings.append(timing * lengthOfQuarterNote/tickDiv)
+        outTimings.append(round(timing * lengthOfQuarterNote/tickDiv)) #round?
     return outTimings
 
 
@@ -134,7 +134,7 @@ def removeToneOff(timings, commands):
             indicesToRemove.append(i)
 
     for i in range(len(indicesToRemove)-1, -1, -1):
-        timings.pop(indicesToRemove[i])
+        timings[indicesToRemove[i]-1] += timings.pop(indicesToRemove[i])
         commands.pop(indicesToRemove[i])    
 
     for i in range(len(commands)):
@@ -152,7 +152,7 @@ def removeRepeatedCommands(timings, commands):
 
     for i in range(len(indicesToRemove)-1, -1, -1):
         timings.pop(indicesToRemove[i])
-        commands.pop(indicesToRemove[i])
+        commands.pop(indicesToRemove[i] - 1)
 
     return timings, commands
 
@@ -170,8 +170,19 @@ def deltaTimeToInt(dTime):
 def generateInoFile(timings, commands, filename):
     f = open(filename, 'w')
     f.write('int tonePin = 11;')
-    f.write('String tones[] = {'+ commands  +'};')
-    f.write('int delays[] = {'+  timings +'};')
+
+    out = ""
+    for command in commands:
+        out += command + ','
+    out = out [:-1]
+    f.write('int tones[] = {'+ out  +'};')
+
+    out = ""
+    for timing in timings:
+        out += str(timing) + ','
+    out = out [:-1]
+    f.write('int delays[] = {'+  out +'};')
+
     f.write("void song() {\nfor(int i = 0; i < sizeof(delays); i++){\ntone(tonePin, tones[i], delays[i]);\ndelay(delays[i] + 25);}}\nvoid setup() {}\nvoid loop() {song();}")
     f.close()
 
@@ -187,12 +198,14 @@ if __name__ == "__main__":
 
     timings = generateArduinoTimings(timings)
     
-    
     #timings = timings[::2]    #Strip off the note off commands
     #commands = commands[::2]
 
-    timings, commands = removeToneOff(timings, commands)
     timings, commands = removeRepeatedCommands(timings, commands)
+
+    print(sum(timings))
+    timings, commands = removeToneOff(timings, commands) #problem in here
+    print(sum(timings))
 
 
     commands = generateArduinoCommands(commands)
@@ -200,4 +213,4 @@ if __name__ == "__main__":
     #print(timings, commands) 
     #print(len(timings), len(commands))
 
-    generateInoFile(timings, commands, 'despacito.ino')
+    generateInoFile(timings[:100], commands[:100], 'allstar.ino')
