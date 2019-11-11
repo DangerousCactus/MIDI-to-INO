@@ -1,6 +1,10 @@
 import binascii  # one byte can fit 2 hex characters in it
 from binascii import hexlify
+
 chunkSize = 16  # chunk size = 8 bytes = 16 chars in hex
+BPM = 89
+lengthOfQuarterNote = 60000/BPM #in MS
+tickDiv = None
 
 midifile = open('despacitoT.midi', 'rb')
 
@@ -44,7 +48,8 @@ def printHex(content):
 def unpackMTrack(content):
     content = content[16:]
     prevOp = ""
-    out = ""
+    timings = []
+    commands = []
     while len(content) > 0:
         deltaTimeEnd = 2
 
@@ -55,6 +60,7 @@ def unpackMTrack(content):
             deltaTimeEnd += 2
 
         deltaTime = deltaTimeToInt(deltaTime)
+        timings.append(deltaTime)
 
         content = content[deltaTimeEnd:]
 
@@ -63,20 +69,41 @@ def unpackMTrack(content):
 
         if content[:2] in [b'ff', b'f0', b'f7']:
             length = int(content[4:6], 16)
-            out += str(deltaTime) + " "+str(content[:6 + length * 2])
+            commands.append(str(content[:6 + length * 2])[2:-1])
             content = content[6 + length * 2:]
 
         elif content[:1] in [b'8', b'9', b'a', b'b']:
-            out += str(deltaTime) + " " + str(content[:6])
+            commands.append(str(content[:6])[2:-1])
             prevOp = content[:2]
             content = content[6:]
 
         elif content[:1] in [b'c', b'd', b'e']:
-            out += str(deltaTime) + " " + str(content[:4])
+            commands.append(str(content[:4])[2:-1])
             prevOp = content[:2]
             content = content[4:]
-        out += "\n"
-    return out.strip()
+
+    return timings, commands
+
+def removeMetaEvents(timings, commands):
+    indicesToRemove = []
+    for i in range(len(commands)):
+        if commands[i][:2] in ['ff', 'f0', 'f7'] or commands[i][:1] in ['a', 'b', 'c', 'd', 'e']:
+            indicesToRemove.append(i)
+
+    for i in range(len(indicesToRemove)-1, -1, -1):
+        timings.pop(indicesToRemove[i])
+        commands.pop(indicesToRemove[i])
+
+    return timings, commands
+
+def generateArduinoTimings(timings):
+    outTimings = []
+    for timing in timings:
+        outTimings.append(timing * lengthOfQuarterNote/tickDiv )
+    return outTimings
+
+def generateArduinoCommands(commands):
+    return commands
 
 def deltaTimeToInt(dTime):
     binTime = format(int(dTime, 16), '0>' + str(len(dTime) * 4)+'b')
@@ -92,9 +119,15 @@ if __name__ == "__main__":
     #printHex(getHeader(contenthex))
     #print(getFormat(contenthex))
     #print(getNTracks(contenthex))
-    #print(getTickdiv(contenthex))
+    tickDiv = getTickdiv(contenthex)
     #printHex(getMTrack(contenthex))
     #printHex(getMTrack(contenthex))
-    print(unpackMTrack(getMTrack(contenthex)))
+    timings, commands = unpackMTrack(getMTrack(contenthex))
+    timings, commands = removeMetaEvents(timings, commands)
+
+    timings = generateArduinoTimings(timings)
+    commands = generateArduinoCommands(commands)
+
+    print(timings, commands)
 
     pass
