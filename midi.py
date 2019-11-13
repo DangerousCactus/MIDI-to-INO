@@ -3,7 +3,7 @@ from binascii import hexlify
 
 chunkSize = 16  # chunk size = 8 bytes = 16 chars in hex
 
-notes = {
+notes = {       # the notes in hex are converted to arduino friendly notes (same as in pitches.h)
     '24': 'C1', '30': 'C2', '3C': 'C3', '48': 'C4', '54': 'C5', '60': 'C6', '6C': 'C7',	'78': 'C8',
     '25': 'CS1', '31': 'CS2', '3D': 'CS3', '49': 'CS4', '55': 'CS5', '61': 'CS6', '6D': 'CS7', '79': 'CS8',
     '26': 'D1', '32': 'D2', '3E': 'D3', '4A': 'D4', '56': 'D5', '62': 'D6', '6E': 'D7', '7A': 'D8',
@@ -18,32 +18,93 @@ notes = {
     '23': 'B0', '2F': 'B1', '3B': 'B2', '47': 'B3', '53': 'B4', '5F': 'B5', '6B': 'B6', '77': 'B7'
 }
 
+# Header - 14 nibbles
+# 	4 nibbles - MThd
+# 	4 nibbles - length (usually 0006)
+# 	2 nibbles - format
+# 	2 nibbles - # tracks
+# 	2 nibbles -tickdiv
 
-def getHeader(content):
+# Body - xxxx nibbles
+# 	4 nibbles - MTrk
+# 	4 nibbles - length
+# 	2-8 nibbles - delta time + event
+	
+# 	Delta Time:
+# 	   If byte is greater or equal to 80h (128 decimal) then the next byte is also part of the VLV,
+# 	   else byte is the last byte in a VLV.
+	
+# 	Events:
+# 	    Midi events (status bytes 0x8n - 0xEn)
+# 	    Will be followed by 1 or 2 bytes
+    
+# 	    If the first (status) byte is less than 128 (hex 80), this implies that running status is in effect, 
+#       and that this byte is actually the first data byte (the status carrying over from the previous MIDI event). This can only be the case if the immediately previous event was also a MIDI event, i.e. SysEx and Meta events interrupt (clear) running status.
+    
+# 	    SysEx events (status bytes 0xF0 and 0xF7)
+	
+# Meta events (status byte 0xFF)
+
+
+def getHeader(content): 
+    '''
+    Return the content of the header track, minus the MThd part.
+    Arguments:
+        content: a binary representation of the MIDI file 
+    Returns: 
+        a binary representation of the header without the 'MThd'
+    '''
     index = content.find(hexlify(b'MThd'))
     length = int(content[index + 8:index + 16], 16)
     return content[index: index + chunkSize + length*2]
 
 
 def getFormat(content):
+    '''
+    Return the format of the MIDI file.
+    Arguments:
+        content: a binary representation of the MIDI file 
+    Returns:
+        An integer representing the format of the MIDI file (0, 1, or 2)
+    '''
     return int(getHeader(content)[16:20], 16)
 
 
 def getNTracks(content):
+    '''
+    Return the number of MTrk tracks in the MIDI file.
+    Arguments:
+        content: a binary representation of the MIDI file 
+    '''
     return int(getHeader(content)[20:24], 16)
 
 
-def getTickdiv(content):  # number of sub-divisions of a quarter note, this song has 480
+def getTickdiv(content): 
+    '''
+    Return the number of sub-divisions of a quarter note. (ticks/quarter note)
+    Arguments:
+        content: a binary representation of the MIDI file 
+    '''
     return int(getHeader(content)[24:28], 16)
 
 
 def getMTrack(content, start=0):
+    '''
+    Returns an MTrk track of the MIDI file. 
+    Defaults to the first track, the start argument allows the retreival of other tracks
+    Arguments:
+        content: a binary representation of the MIDI file 
+        start (default = 0): when to start the search for the MTrk
+    Returns:
+        A binary representation of the MTrk 
+    '''
     index = content[:].find(hexlify(b'MTrk'), start)
     length = int(content[index + 8:index + 16], 16)
     return content[index: index + chunkSize + length*2]
 
 
 def printHex(content):
+    """Prints and incoming binary string into a hex friendly formant (spaces between chunks of 8 hex chars)."""
     out = ""
     while len(content) > 0:
         out += str(content[:8]) + " "
@@ -52,6 +113,15 @@ def printHex(content):
 
 
 def unpackMTrack(content):
+    '''
+    Takes in an MTrk and breaks it down depending on status codes.
+    Arguments:
+        content: a binary representation of the MTrk
+    returns:
+        A list containing timings between events
+        A list containing the events
+
+    '''
     content = content[16:]
     prevOp = ""
     timings = []
@@ -92,6 +162,15 @@ def unpackMTrack(content):
 
 
 def removeMetaEvents(timings, commands):
+    '''
+    Removes the events that are not note ON (0x9X) from both a timings and a commands list
+    Arguments:
+        timings: a list containing timings between events
+        commands: a list containing the events
+    Returns:
+        timings: a list containing timings between events with only note ON statuses
+        commands: a list containing the events with only note ON statuses
+    '''
     indicesToRemove = []
     for i in range(len(commands)):
         if commands[i][:2] in ['ff', 'f0', 'f7'] or commands[i][:1] in ['a', 'b', 'c', 'd', 'e']:
@@ -105,6 +184,15 @@ def removeMetaEvents(timings, commands):
 
 
 def generateArduinoTimings(timings, lengthOfQuarterNote, tickDiv):
+    '''
+    Converts the given timings (in tickDiv format) to millisecond format
+    Arguments:
+        timings: a list containing timings between events in tickDiv format
+        lengthOfQuarterNote: the length of a quarter note in milliseconds
+        tickDiv: the number of sub-divisions of a quarter note.
+    Returns:
+        timings: a list containing timings between events in milliseconds
+    '''
     outTimings = []
     for timing in timings:
         outTimings.append(
@@ -113,6 +201,13 @@ def generateArduinoTimings(timings, lengthOfQuarterNote, tickDiv):
 
 
 def generateArduinoCommands(commands):
+    '''
+    Converts the incoming notes in hexadecimal form to Arduino-friendly form (as defined by pitches.h)
+    Arguments:
+        commands: a list containing the events in hex form
+    Returns:
+        commands: a list containing the events in Arduino-friendly form
+    '''
     tones = []
     for command in commands:
         tones.append(notes.get(command.upper()))
@@ -120,6 +215,15 @@ def generateArduinoCommands(commands):
 
 
 def removeToneOff(timings, commands):
+    '''
+    Removes the events that are note ON (0x9X) with a velocity of 0 (these are note OFFs)
+    Arguments:
+        timings: a list containing timings between events
+        commands: a list containing the events
+    Returns:
+        timings: a list containing timings between events with the note OFFs removed
+        commands: a list containing the events with the note OFFs removed
+    '''
     indicesToRemove = []
     for i in range(len(commands)):
         if commands[i][-2:] == '00':
@@ -136,6 +240,15 @@ def removeToneOff(timings, commands):
 
 
 def removeRepeatedCommands(timings, commands):
+    '''
+    Removes the chords in a song and only keeps the top note
+    Arguments:
+        timings: a list containing timings between events
+        commands: a list containing the events
+    Returns:
+        timings: a list containing timings between events with chords removed
+        commands: a list containing the events with the chords removed
+    '''
     indicesToRemove = []
 
     for i in range(len(timings)):
@@ -150,6 +263,14 @@ def removeRepeatedCommands(timings, commands):
 
 
 def deltaTimeToInt(dTime):
+    '''
+    Returns the base-10 integer value represented by a deltaTime
+    deltaTimes are a VLV (see comment chunk at the top) thus continuation bits must be removed
+    Arguments:
+        dTime: a binary representation of a deltaTime
+    Returns:
+        a integer presenentation of dTime
+    '''
     binTime = format(int(dTime, 16), '0>' + str(len(dTime) * 4)+'b')
     parsedBinTime = ""
     while len(binTime) > 0:
@@ -160,6 +281,14 @@ def deltaTimeToInt(dTime):
 
 
 def generateInoFile(timings, commands, filename):
+    '''
+    Generates a runnable .ino file for arduino given the formatted MIDI data.
+    The .ino file is placed in the same directory as this code.
+    Arguments:
+        timings: a list containing timings between events
+        commands: a list containing the events
+        filename: the filename of the .ino file
+    '''
     f = open(filename, 'w')
     pitches = open('pitches.h', 'r')
 
@@ -187,6 +316,12 @@ def generateInoFile(timings, commands, filename):
 
 
 def makeSong(name, bpm):
+    '''
+    Converts a MIDI file to an Arduino .ino file that contains a song
+    Arguments:
+        name: the file name of the .midi file that is in the same directory as this code
+        bpm: the Beats Per Minute of the song
+    '''
     BPM = bpm
     lengthOfQuarterNote = 60000/BPM  # in MS
 
@@ -210,7 +345,8 @@ def makeSong(name, bpm):
 
 songs = [['allstar', 150], ['despacito', 120], ['numberone', 120], ['mario', 240]]
 
-# for song in songs:
-#     makeSong(song[0], song[1])
+if __name__ == "__main__":
+    for song in songs:
+        makeSong(song[0], song[1])
 
-makeSong(songs[1][0], songs[1][1])
+    #makeSong(songs[1][0], songs[1][1])
