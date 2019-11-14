@@ -345,4 +345,12 @@ def makeSong(name, bpm):
 
 
 if __name__ == "__main__":
-    makeSong(os.sys.argv[1], int(os.sys.argv[2]))   
+    if len(os.sys.argv) == 3:
+        makeSong(os.sys.argv[1], int(os.sys.argv[2]))   
+    elif len(os.sys.argv) == 1:
+        name = input('name: ')
+        bpm = input('bpm: ')
+        makeSong(name, int(bpm))
+    else:
+        print("The correct format for using this script is")
+        print("python SONG_NAME BPM")
