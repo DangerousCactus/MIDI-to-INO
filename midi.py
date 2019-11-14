@@ -1,3 +1,4 @@
+import os
 import binascii  # one byte can fit 2 hex characters in it
 from binascii import hexlify
 
@@ -343,10 +344,5 @@ def makeSong(name, bpm):
     #generateInoFile(timings, commands, name + '.ino')
 
 
-songs = [['allstar', 150], ['despacito', 120], ['numberone', 120], ['mario', 240]]
-
 if __name__ == "__main__":
-    for song in songs:
-        makeSong(song[0], song[1])
-
-    #makeSong(songs[1][0], songs[1][1])
+    makeSong(os.sys.argv[1], int(os.sys.argv[2]))   
