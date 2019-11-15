@@ -341,7 +341,7 @@ def makeSong(name, bpm):
     timings, commands = removeToneOff(timings, commands) #fix, need 3 vars, delay, length, and tone
     commands = generateArduinoCommands(commands)
     #print(timings, len(timings))
-    #generateInoFile(timings, commands, name + '.ino')
+    generateInoFile(timings, commands, name + '.ino')
 
 
 if __name__ == "__main__":
