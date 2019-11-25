@@ -316,7 +316,7 @@ def generateInoFile(timings, commands, filename):
     f.close()
 
 
-def makeSong(name, bpm):
+def makeSong(name, bpm, songLen):
     '''
     Converts a MIDI file to an Arduino .ino file that contains a song
     Arguments:
@@ -341,16 +341,17 @@ def makeSong(name, bpm):
     timings, commands = removeToneOff(timings, commands) #fix, need 3 vars, delay, length, and tone
     commands = generateArduinoCommands(commands)
     #print(timings, len(timings))
-    generateInoFile(timings, commands, name + '.ino')
+    generateInoFile(timings[:songLen], commands[:songLen], name + '.ino')
 
 
 if __name__ == "__main__":
     if len(os.sys.argv) == 3:
-        makeSong(os.sys.argv[1], int(os.sys.argv[2]))   
+        makeSong(os.sys.argv[1], int(os.sys.argv[2]),int(os.sys.argv[3]))   
     elif len(os.sys.argv) == 1:
         name = input('name: ')
         bpm = input('bpm: ')
-        makeSong(name, int(bpm))
+        songLen = input('number of notes: ')
+        makeSong(name, int(bpm), int(songLen))
     else:
         print("The correct format for using this script is")
-        print("python SONG_NAME BPM")
+        print("python SONG_NAME BPM LEN")
