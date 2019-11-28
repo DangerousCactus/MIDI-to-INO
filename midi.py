@@ -311,8 +311,7 @@ def generateInoFile(timings, commands, filename):
     out = out[:-1]
     f.write('int delays[] = {' + out + '};' + "\n")
 
-    f.write(
-        "double mod = 1;\nvoid song() {\nfor(int i = 0; i < sizeof(delays)/sizeof(delays[0]); i++){\ntone(tonePin, tones[i], delays[i]);\ndelay(delays[i]*mod + 25);}}\nvoid setup() {}\nvoid loop() {song();}")
+    f.write("void song() {  bool playing = true;    for (int i = 0; i < sizeof(delays) / sizeof(delays[0]); i++) {    tone(9, tones[i], delays[i]);    delay(delays[i] + 25);    if (analogRead(A0) <= 950) break;  }}void setup() {}void loop() {  if (analogRead(A0) > 950) song();}")
     f.close()
 
 
@@ -341,6 +340,7 @@ def makeSong(name, bpm, songLen):
     timings, commands = removeToneOff(timings, commands) #fix, need 3 vars, delay, length, and tone
     commands = generateArduinoCommands(commands)
     #print(timings, len(timings))
+    
     generateInoFile(timings[:songLen], commands[:songLen], name + '.ino')
 
 
